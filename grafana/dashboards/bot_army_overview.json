@@ -1,0 +1,990 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT time, total_value FROM portfolio_snapshots ORDER BY time DESC LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Portfolio Value",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT CASE WHEN status = 'READY' THEN 1 ELSE 0 END AS value FROM go_live_readiness",
+          "refId": "A"
+        }
+      ],
+      "title": "Go-Live Readiness",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT sharpe_ratio FROM go_live_readiness",
+          "refId": "A"
+        }
+      ],
+      "title": "Sharpe (Latest)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, total_value FROM portfolio_snapshots WHERE time > NOW() - INTERVAL '24 hours' ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Portfolio History (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 40 },
+              { "color": "green", "value": 55 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 8 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT NOW() as time, win_rate * 100 as value FROM strategy_performance ORDER BY trade_count DESC LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Win Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": { "mappings": [], "unit": "short" }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["sum"] }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT NOW() as time, COUNT(*) as value FROM trades WHERE time > NOW() - INTERVAL '24 hours'",
+          "refId": "A"
+        }
+      ],
+      "title": "Trades (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": { "mappings": [], "unit": "short" }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 12 },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["sum"] }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT NOW() as time, COUNT(*) as value FROM signals WHERE time > NOW() - INTERVAL '24 hours'",
+          "refId": "A"
+        }
+      ],
+      "title": "Signals (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": { "mappings": [], "unit": "short" }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 12 },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT NOW() as time, COUNT(*) as value FROM positions",
+          "refId": "A"
+        }
+      ],
+      "title": "Open Positions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "pnl" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 7,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "pnl" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT strategy_name, trade_count, wins, losses, ROUND(total_pnl::numeric, 2) as pnl, ROUND(win_rate::numeric * 100, 1) as win_rate FROM strategy_performance ORDER BY total_pnl DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Strategy Performance",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 8,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT strategy_name, trade_count FROM strategy_performance",
+          "refId": "A"
+        }
+      ],
+      "title": "Trades by Strategy",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 9,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT strategy_name, weight FROM strategy_allocations WHERE time = (SELECT MAX(time) FROM strategy_allocations)",
+          "refId": "A"
+        }
+      ],
+      "title": "Strategy Allocation (Latest)",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "correlation" },
+            "properties": [
+              { "id": "unit", "value": "percent" }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 10,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "correlation" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT strategy_a, strategy_b, correlation FROM strategy_correlations WHERE time = (SELECT MAX(time) FROM strategy_correlations) ORDER BY correlation DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Strategy Correlations (Latest)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 1 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 36 },
+      "id": 13,
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT criteria, threshold, value, status FROM go_live_checklist",
+          "refId": "A"
+        }
+      ],
+      "title": "Go-Live Checklist",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
+      "id": 14,
+      "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, price as value FROM market_data WHERE $__timeFilter(time) ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Prices",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
+      "id": 15,
+      "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, spread as value FROM market_data WHERE $__timeFilter(time) AND spread IS NOT NULL ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Spread",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 },
+      "id": 16,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, volume_1h as value FROM market_data WHERE $__timeFilter(time) AND volume_1h IS NOT NULL ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Volume (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 },
+      "id": 17,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, open_interest as value FROM market_data WHERE $__timeFilter(time) AND open_interest IS NOT NULL ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Open Interest",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 58 },
+      "id": 18,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "time" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, event_id, side, quantity, price, value, status, strategy_name FROM trades ORDER BY time DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Trades",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 66 },
+      "id": 19,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "time" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, event_id, signal_type, confidence, price_target, stop_loss, take_profit, strategy_name FROM signals ORDER BY time DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Signals",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 74 },
+      "id": 20,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "updated_at" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT position_id, market_id, event_id, side, quantity, entry_price, current_price, unrealized_pnl, realized_pnl, strategy_name, updated_at FROM positions ORDER BY updated_at DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Open Positions",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 82 },
+      "id": 21,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "volume" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT event_id, title, category, volume, liquidity, collected_at FROM events ORDER BY volume DESC NULLS LAST LIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Top Events by Volume",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 90 },
+      "id": 22,
+      "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, volume_24h as value FROM market_data WHERE $__timeFilter(time) AND volume_24h IS NOT NULL ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Volume (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 90 },
+      "id": 23,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, strategy_name, COUNT(*) as value FROM signals WHERE $__timeFilter(time) GROUP BY time, strategy_name ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Signals by Strategy",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 98 },
+      "id": 24,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time, strategy_name, COUNT(*) as value FROM trades WHERE $__timeFilter(time) GROUP BY time, strategy_name ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Trades by Strategy",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 98 },
+      "id": 25,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "time" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, feature_name, feature_value FROM ml_features WHERE $__timeFilter(time) ORDER BY time DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent ML Features",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 106 },
+      "id": 26,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "time" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT time, market_id, model_name, prediction, confidence FROM ml_predictions WHERE $__timeFilter(time) ORDER BY time DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent ML Predictions",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": true,
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 114 },
+      "id": 27,
+      "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time_bucket('1 hour', time) AS time, source, AVG(sentiment_score) AS value FROM external_signals WHERE $__timeFilter(time) GROUP BY time, source ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "External Sentiment (Hourly)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 114 },
+      "id": 28,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "time" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT time, source, channel, label, sentiment_score, magnitude, text, url FROM external_signals ORDER BY time DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent External Signals",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 122 },
+      "id": 29,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "time" }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT time, source, target, correlation, sample_count, window_hours FROM external_correlations ORDER BY time DESC, correlation DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "External Correlations (Latest)",
+      "type": "table"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["polymania", "trading"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "PolyMania Bot Army Overview",
+  "uid": "bot-army-overview",
+  "version": 1,
+  "weekStart": ""
+}
+

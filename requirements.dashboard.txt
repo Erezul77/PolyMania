@@ -1,0 +1,18 @@
+# PolyMania Bot Army - Dashboard Requirements
+# ===========================================
+
+# Streamlit
+streamlit>=1.29.0
+
+# Data visualization
+plotly>=5.18.0
+
+# Data processing
+pandas>=2.1.0
+numpy>=1.26.0
+
+# Redis client
+redis>=5.0.0
+
+# Utilities
+python-dotenv>=1.0.0

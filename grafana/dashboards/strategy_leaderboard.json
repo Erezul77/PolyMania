@@ -1,0 +1,529 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align:center; font-family: 'Courier New', monospace; background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%); padding: 10px; border-radius: 8px;\">\n  <span style=\"font-size: 32px; font-weight: bold; color: #00ff88; text-shadow: 0 0 20px #00ff88;\">🏆 STRATEGY TOURNAMENT 🏆</span>\n  <br/>\n  <span style=\"font-size: 14px; color: #ffd700;\">12 Strategies Competing • Thompson Sampling • Live Rankings</span>\n</div>"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "🥇 LEADER",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 2 },
+      "id": 1,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#ffd700" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#ffd700", "value": null }] }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "name"
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT strategy_name AS \"Leader\" FROM signals WHERE strategy_name != 'ensemble' AND strategy_name != '' AND time > NOW() - INTERVAL '24 hours' GROUP BY strategy_name ORDER BY count(*) DESC LIMIT 1",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "📊 Strategies Active",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 3, "x": 4, "y": 2 },
+      "id": 2,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT count(DISTINCT strategy_name) AS value FROM signals WHERE strategy_name != 'ensemble' AND strategy_name != '' AND time > NOW() - INTERVAL '24 hours'",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "📈 Total Signals (24h)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 3, "x": 7, "y": 2 },
+      "id": 3,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT count(*) AS value FROM signals WHERE time > NOW() - INTERVAL '24 hours'",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "⚔️ Trades (24h)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 3, "x": 10, "y": 2 },
+      "id": 4,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "purple" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT count(*) AS value FROM trades WHERE status = 'FILLED' AND time > NOW() - INTERVAL '24 hours'",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "💰 Portfolio",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 4, "x": 13, "y": 2 },
+      "id": 5,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "currencyUSD",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 10000 }] }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT COALESCE(total_value, 10000) AS value FROM portfolio_snapshots ORDER BY time DESC LIMIT 1",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "📈 Sharpe",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 3, "x": 17, "y": 2 },
+      "id": 6,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 1 }, { "color": "green", "value": 1.75 }] }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT COALESCE(sharpe_ratio, 0) AS value FROM portfolio_snapshots ORDER BY time DESC LIMIT 1",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "🎯 GO-LIVE",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 2 },
+      "id": 7,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [{ "type": "value", "options": { "0": { "text": "❌ NOT READY", "color": "red" }, "1": { "text": "✅ READY", "color": "green" } } }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT CASE WHEN sharpe_ratio >= 1.75 AND max_drawdown <= 0.10 AND total_pnl > 0 THEN 1 ELSE 0 END AS value FROM portfolio_snapshots ORDER BY time DESC LIMIT 1",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "table",
+      "title": "🏆 STRATEGY LEADERBOARD (24h)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 14, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "center", "cellOptions": { "type": "auto" }, "filterable": true }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Rank" },
+            "properties": [
+              { "id": "custom.width", "value": 60 },
+              { "id": "mappings", "value": [{ "type": "value", "options": { "1": { "text": "🥇 1" }, "2": { "text": "🥈 2" }, "3": { "text": "🥉 3" } } }] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Strategy" },
+            "properties": [
+              { "id": "custom.width", "value": 130 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "white" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Signals" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "dark-blue", "value": null }, { "color": "blue", "value": 10 }, { "color": "green", "value": 50 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Trades" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "dark-purple", "value": null }, { "color": "purple", "value": 5 }, { "color": "green", "value": 20 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "PnL" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "decimals", "value": 2 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Win%" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "basic" } },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.45 }, { "color": "green", "value": 0.55 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Weight" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "basic" } },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 0.4 },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }, { "color": "green", "value": 0.1 }, { "color": "yellow", "value": 0.25 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "md", "footer": { "show": false } },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "WITH sig AS (\n  SELECT strategy_name, count(*) AS signals\n  FROM signals\n  WHERE strategy_name != '' AND strategy_name != 'ensemble' AND time > NOW() - INTERVAL '24 hours'\n  GROUP BY strategy_name\n),\ntrd AS (\n  SELECT strategy_name, count(*) AS trades, COALESCE(SUM(pnl), 0) AS total_pnl,\n    CASE WHEN count(*) > 0 THEN SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END)::float / count(*) ELSE 0 END AS win_rate\n  FROM trades\n  WHERE strategy_name != '' AND strategy_name != 'ensemble' AND status = 'FILLED' AND time > NOW() - INTERVAL '24 hours'\n  GROUP BY strategy_name\n),\nalloc AS (\n  SELECT strategy_name, weight\n  FROM strategy_allocations\n  WHERE time = (SELECT MAX(time) FROM strategy_allocations)\n)\nSELECT\n  ROW_NUMBER() OVER (ORDER BY COALESCE(sig.signals, 0) DESC) AS \"Rank\",\n  COALESCE(sig.strategy_name, trd.strategy_name, alloc.strategy_name) AS \"Strategy\",\n  COALESCE(sig.signals, 0) AS \"Signals\",\n  COALESCE(trd.trades, 0) AS \"Trades\",\n  COALESCE(trd.total_pnl, 0) AS \"PnL\",\n  COALESCE(trd.win_rate, 0) AS \"Win%\",\n  COALESCE(alloc.weight, 0.083) AS \"Weight\"\nFROM sig\nFULL OUTER JOIN trd ON sig.strategy_name = trd.strategy_name\nFULL OUTER JOIN alloc ON COALESCE(sig.strategy_name, trd.strategy_name) = alloc.strategy_name\nWHERE COALESCE(sig.strategy_name, trd.strategy_name, alloc.strategy_name) IS NOT NULL\nORDER BY COALESCE(sig.signals, 0) DESC\nLIMIT 12",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "📈 SIGNALS BY STRATEGY (Hourly)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 14, "w": 12, "x": 12, "y": 6 },
+      "id": 11,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 80, "stacking": { "mode": "normal" } }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "time_series",
+        "rawQuery": true,
+        "rawSql": "SELECT\n  time_bucket('1 hour', time) AS time,\n  strategy_name,\n  count(*) AS signals\nFROM signals\nWHERE strategy_name != '' AND strategy_name != 'ensemble' AND $__timeFilter(time)\nGROUP BY 1, 2\nORDER BY 1",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "piechart",
+      "title": "🎯 SIGNAL SHARE BY STRATEGY",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 20 },
+      "id": 20,
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" } }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["sum"] },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT strategy_name AS \"Strategy\", count(*) AS \"Signals\" FROM signals WHERE strategy_name != '' AND strategy_name != 'ensemble' AND time > NOW() - INTERVAL '24 hours' GROUP BY strategy_name ORDER BY count(*) DESC",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "barchart",
+      "title": "📊 STRATEGY WEIGHTS (Current Allocation)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 20 },
+      "id": 21,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "percentunit"
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "legend": { "displayMode": "hidden" }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT strategy_name AS \"Strategy\", weight AS \"Weight\" FROM strategy_allocations WHERE time = (SELECT MAX(time) FROM strategy_allocations) ORDER BY weight DESC",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "⚡ WEIGHT EVOLUTION OVER TIME",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 22,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20, "stacking": { "mode": "normal" } },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "time_series",
+        "rawQuery": true,
+        "rawSql": "SELECT time, strategy_name, weight FROM strategy_allocations WHERE $__timeFilter(time) ORDER BY time",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "table",
+      "title": "📜 RECENT SIGNALS (All Strategies)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 28 },
+      "id": 30,
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "center", "filterable": true } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Time" },
+            "properties": [{ "id": "custom.width", "value": 100 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Strategy" },
+            "properties": [
+              { "id": "custom.width", "value": 120 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Type" },
+            "properties": [
+              { "id": "custom.width", "value": 80 },
+              { "id": "mappings", "value": [{ "type": "value", "options": { "BUY": { "text": "🟢 BUY", "color": "green" }, "SELL": { "text": "🔴 SELL", "color": "red" } } }] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Conf" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "basic" } },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "green", "value": 0.7 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm" },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT\n  to_char(time, 'HH24:MI:SS') AS \"Time\",\n  strategy_name AS \"Strategy\",\n  signal_type AS \"Type\",\n  confidence AS \"Conf\",\n  SUBSTRING(market_id, 1, 25) AS \"Market\"\nFROM signals\nWHERE strategy_name != '' AND $__timeFilter(time)\nORDER BY time DESC\nLIMIT 30",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "table",
+      "title": "⚔️ RECENT TRADES (All Strategies)",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 28 },
+      "id": 31,
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "center", "filterable": true } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Time" },
+            "properties": [{ "id": "custom.width", "value": 100 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Strategy" },
+            "properties": [
+              { "id": "custom.width", "value": 120 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Side" },
+            "properties": [
+              { "id": "custom.width", "value": 80 },
+              { "id": "mappings", "value": [{ "type": "value", "options": { "BUY": { "text": "🟢 BUY", "color": "green" }, "SELL": { "text": "🔴 SELL", "color": "red" } } }] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "PnL" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "decimals", "value": 2 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }] } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm" },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT\n  to_char(time, 'HH24:MI:SS') AS \"Time\",\n  strategy_name AS \"Strategy\",\n  side AS \"Side\",\n  SUBSTRING(market_id, 1, 20) AS \"Market\",\n  price AS \"Price\",\n  pnl AS \"PnL\"\nFROM trades\nWHERE status = 'FILLED' AND $__timeFilter(time)\nORDER BY time DESC\nLIMIT 30",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "💰 PORTFOLIO VALUE",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 38 },
+      "id": 40,
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 30, "gradientMode": "scheme" },
+          "unit": "currencyUSD"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "format": "time_series",
+        "rawQuery": true,
+        "rawSql": "SELECT time, total_value FROM portfolio_snapshots WHERE $__timeFilter(time) ORDER BY time",
+        "refId": "A"
+      }]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["polymania", "tournament", "strategies", "competition"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "🏆 Strategy Tournament",
+  "uid": "polymania-leaderboard",
+  "version": 1
+}

@@ -1,0 +1,13 @@
+# Grafana Dashboard Provisioning
+apiVersion: 1
+
+providers:
+  - name: 'PolyMania Dashboards'
+    orgId: 1
+    folder: 'PolyMania'
+    folderUid: 'polymania'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

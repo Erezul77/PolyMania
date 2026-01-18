@@ -1,0 +1,201 @@
+# PolyMania Bot Army - Docker Compose for Oracle VM
+# =================================================
+# Full production stack with all services
+
+version: '3.8'
+
+services:
+  # ============================================
+  # INFRASTRUCTURE
+  # ============================================
+  
+  # TimescaleDB - Time-series database
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: polymania_timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: polymania
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: polymania
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./init_db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polymania"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - polymania_network
+  
+  # Redis - Caching and pub/sub
+  redis:
+    image: redis:7-alpine
+    container_name: polymania_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - polymania_network
+  
+  # ============================================
+  # BOT ARMY SERVICES
+  # ============================================
+  
+  # Main Bot Army Orchestrator
+  bot_army:
+    build:
+      context: .
+      dockerfile: Dockerfile.oracle
+    container_name: polymania_bot_army
+    restart: unless-stopped
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-polymania}
+      - DB_USER=${DB_USER:-polymania}
+      - DB_PASSWORD=${DB_PASSWORD:-polymania}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - EXECUTION_MODE=${EXECUTION_MODE:-paper}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - EXTERNAL_SIGNALS_PATHS=${EXTERNAL_SIGNALS_PATHS:-/app/data/signals.csv,/app/data/telegram_hits.csv}
+      - NEWS_API_KEY=${NEWS_API_KEY:-}
+      - NEWS_KEYWORDS=${NEWS_KEYWORDS:-polymarket,crypto,bitcoin}
+      - FRED_API_KEY=${FRED_API_KEY:-}
+      - FRED_SERIES=${FRED_SERIES:-FEDFUNDS,CPIAUCSL}
+      - WEATHER_LOCATIONS=${WEATHER_LOCATIONS:-TelAviv:32.0853,34.7818;NYC:40.7128,-74.0060}
+      - EXTERNAL_SOURCES_INTERVAL_SECONDS=${EXTERNAL_SOURCES_INTERVAL_SECONDS:-600}
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./data:/app/data
+    networks:
+      - polymania_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  
+  # ============================================
+  # MONITORING & VISUALIZATION
+  # ============================================
+  
+  # Streamlit Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: polymania_dashboard
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8501:8501"
+    networks:
+      - polymania_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Telegram Watcher (legacy) - optional external signals
+  telegram_watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: polymania_telegram_watcher
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - TG_API_ID=${TG_API_ID:-}
+      - TG_API_HASH=${TG_API_HASH:-}
+      - TG_WATCH_CHANNELS=${TG_WATCH_CHANNELS:-}
+      - TG_WATCH_KEYWORDS=${TG_WATCH_KEYWORDS:-}
+      - TG_SCAN_INTERVAL_SEC=${TG_SCAN_INTERVAL_SEC:-60}
+      - TG_SCAN_JITTER_SEC=${TG_SCAN_JITTER_SEC:-0}
+      - TG_SCAN_BACKOFF_SEC=${TG_SCAN_BACKOFF_SEC:-30}
+    volumes:
+      - ./data:/app/data
+    working_dir: /app/data
+    command: ["python", "-m", "polymania.telegram_watch_loop"]
+    networks:
+      - polymania_network
+    profiles:
+      - external
+  
+  # Grafana - Advanced metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: polymania_grafana
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?Set GRAFANA_PASSWORD in .env}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - DB_USER=${DB_USER:-polymania}
+      - DB_PASSWORD=${DB_PASSWORD:-polymania}
+      - DB_NAME=${DB_NAME:-polymania}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3000:3000"
+    networks:
+      - polymania_network
+  
+  # ============================================
+  # LEGACY SERVICES (Original PolyMania)
+  # ============================================
+  
+  # Original scanner service
+  scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: polymania_scanner
+    restart: unless-stopped
+    environment:
+      - POLYMARKET_API_KEY=${POLYMARKET_API_KEY:-}
+      - NEWS_API_KEY=${NEWS_API_KEY:-}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - polymania_network
+    profiles:
+      - legacy
+
+networks:
+  polymania_network:
+    driver: bridge
+
+volumes:
+  timescaledb_data:
+  redis_data:
+  grafana_data:

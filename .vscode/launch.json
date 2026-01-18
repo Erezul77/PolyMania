@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PolyMania: Run main",
+      "type": "python",
+      "request": "launch",
+      "module": "polymania.main",
+      "justMyCode": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}
+

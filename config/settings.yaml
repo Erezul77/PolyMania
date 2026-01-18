@@ -1,0 +1,140 @@
+# PolyMania Bot Army Configuration
+# =================================
+
+system:
+  name: "PolyMania Bot Army"
+  version: "2.0.0"
+  environment: "production"
+  log_level: "INFO"
+
+# Database Configuration
+database:
+  host: "${DB_HOST:-timescaledb}"
+  port: ${DB_PORT:-5432}
+  name: "polymania"
+  user: "polymania"
+  password: "${DB_PASSWORD:-polymania}"
+  pool_size: 10
+  
+# Redis Configuration
+redis:
+  host: "${REDIS_HOST:-redis}"
+  port: ${REDIS_PORT:-6379}
+  db: 0
+  password: "${REDIS_PASSWORD:-}"
+
+# Data Collection
+collectors:
+  markets:
+    enabled: true
+    interval_seconds: 10
+    batch_size: 100
+    
+  trades:
+    enabled: true
+    interval_seconds: 5
+    whale_threshold: 10000
+    
+  orderbook:
+    enabled: true
+    interval_seconds: 2
+    depth_levels: 10
+    
+  events:
+    enabled: true
+    interval_seconds: 60
+
+# ML Engine
+ml:
+  models:
+    - name: "direction_rf"
+      type: "random_forest"
+      enabled: true
+      retrain_interval: 3600
+      
+    - name: "price_gbr"
+      type: "gradient_boosting"
+      enabled: true
+      retrain_interval: 3600
+      
+    - name: "lstm"
+      type: "deep_learning"
+      enabled: false
+      
+  feature_engineering:
+    price_lookback: 100
+    volume_lookback: 50
+    compute_all: true
+
+# Trading Strategies
+strategies:
+  momentum:
+    enabled: true
+    weight: 0.35
+    params:
+      rsi_overbought: 70
+      rsi_oversold: 30
+      momentum_lookback: 10
+      
+  stat_arb:
+    enabled: true
+    weight: 0.35
+    params:
+      zscore_entry: 2.0
+      zscore_exit: 0.5
+      min_correlation: 0.7
+      
+  mean_reversion:
+    enabled: true
+    weight: 0.30
+    params:
+      bb_threshold: 0.9
+      entry_deviation: 0.1
+
+# Execution
+execution:
+  mode: "paper"  # paper, live
+  paper_balance: 10000
+  fee_rate: 0.001
+  slippage: 0.001
+
+# Risk Management
+risk:
+  max_portfolio_risk: 0.02
+  max_position_risk: 0.01
+  max_positions: 20
+  max_correlation: 0.7
+  max_sector_exposure: 0.3
+  max_drawdown: 0.10
+  daily_loss_limit: 0.03
+  var_confidence: 0.95
+
+# Dashboard
+dashboard:
+  host: "0.0.0.0"
+  port: 8501
+  refresh_interval: 5
+
+# Grafana
+grafana:
+  enabled: true
+  host: "0.0.0.0"
+  port: 3000
+
+# Alerts
+alerts:
+  enabled: true
+  channels:
+    - type: "telegram"
+      enabled: ${TELEGRAM_ALERTS:-false}
+      chat_id: "${TELEGRAM_CHAT_ID:-}"
+      
+  triggers:
+    - name: "large_pnl"
+      condition: "abs(pnl) > 100"
+      
+    - name: "risk_elevated"
+      condition: "risk_level in ['ELEVATED', 'MAXIMUM']"
+      
+    - name: "drawdown_warning"
+      condition: "drawdown > 0.05"

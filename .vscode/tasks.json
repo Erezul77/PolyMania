@@ -1,0 +1,164 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PolyMania: Create venv",
+      "type": "shell",
+      "command": "python",
+      "args": ["-m", "venv", ".venv"],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Create a local virtual environment in .venv"
+    },
+    {
+      "label": "PolyMania: Install requirements",
+      "type": "shell",
+      "command": "python",
+      "args": ["-m", "pip", "install", "-r", "requirements.txt"],
+      "options": {
+        "env": {"PIP_DISABLE_PIP_VERSION_CHECK": "1"}
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Install dependencies into the active Python environment"
+    },
+    {
+      "label": "PolyMania: Run (using .venv)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.main"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Run PolyMania main loop using the local virtual environment"
+    },
+    {
+      "label": "PolyMania: Test Telegram",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.test_telegram_connection"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Send a test message to the configured Telegram chat using PolyMania settings"
+    },
+    {
+      "label": "PolyMania: Test News + Telegram",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.test_news_connection"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Test News API + Telegram integration for PolyMania"
+    },
+    {
+      "label": "PolyMania: List Telegram Chats",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.list_telegram_chats"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "List all chats (private/groups) the bot has seen, to find chat_id for a group or friend"
+    },
+    {
+      "label": "PolyMania: Debug one scan",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.debug_scan_once"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Run one debug scan cycle of the Polymania detector"
+    },
+    {
+      "label": "PolyMania: Telegram USER first login",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.telegram_first_login"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "First-time login for Telegram USER client (Telethon). Creates a session file."
+    },
+    {
+      "label": "PolyMania: Telegram USER list dialogs",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.telegram_list_dialogs"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "List all dialogs (private/groups/channels) available to the Telegram USER client"
+    },
+    {
+      "label": "PolyMania: Telegram Scan Channels Once",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "polymania.telegram_watch_channels"],
+      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "linux": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "osx": {"command": "${workspaceFolder}/.venv/bin/python"},
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Run a one-shot scan of configured Telegram channels for configured keywords using the user client"
+    },
+    {
+      "label": "PolyMania: Telegram Pipeline (login if needed, then scan once)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "-m",
+        "polymania.telegram_pipeline"
+      ],
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "linux": {
+        "command": "${workspaceFolder}/.venv/bin/python"
+      },
+      "osx": {
+        "command": "${workspaceFolder}/.venv/bin/python"
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "One-command: checks env+deps, logs in if session missing, then scans channels once and writes hits CSV"
+    },
+    {
+      "label": "PolyMania: Telegram Channel Wizard (pick channels -> update .env)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "-m",
+        "polymania.telegram_channel_wizard"
+      ],
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
+      "linux": {
+        "command": "${workspaceFolder}/.venv/bin/python"
+      },
+      "osx": {
+        "command": "${workspaceFolder}/.venv/bin/python"
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Interactive: list dialogs, choose channels/groups, safely update ONLY TG_WATCH_CHANNELS in .env"
+    }
+  ]
+}

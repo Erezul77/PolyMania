@@ -1,0 +1,502 @@
+BLOCK 1 — PolyMania base project (Python, local CLI)
+
+You are Cursor AI working in an EMPTY folder for a new project named "PolyMania".
+Create the following file structure and fill each file with the EXACT content below.
+
+File tree to create:
+
+- requirements.txt
+- README.md
+- .env.example
+- polymania/__init__.py
+- polymania/config.py
+- polymania/polymarket_client.py
+- polymania/detector.py
+- polymania/news_client.py
+- polymania/notifier.py
+- polymania/main.py
+
+================================
+=== requirements.txt ===========
+================================
+requests>=2.31.0
+python-dotenv>=1.0.1
+
+================================
+=== README.md ==================
+================================
+# PolyMania
+
+Local tool that watches Polymarket events, detects sharp "runs" in price/volume,
+and sends you alerts (Telegram or console) together with recent news headlines
+about the event.
+
+## Quickstart
+
+1. Create and activate a virtual environment:
+
+```bash
+python -m venv .venv
+# On Linux/macOS:
+source .venv/bin/activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+Install dependencies:
+
+bash
+Copy code
+pip install -r requirements.txt
+Copy .env.example to .env and fill in:
+
+TELEGRAM_BOT_TOKEN – bot token from @BotFather (optional)
+
+TELEGRAM_CHAT_ID – your chat/user ID (optional)
+
+NEWS_API_KEY – API key from https://newsapi.org (optional)
+
+Without these, PolyMania will still run and print alerts to the console.
+
+Run:
+
+bash
+Copy code
+python -m polymania.main
+Notes
+This tool is for research/educational purposes only.
+
+Check local laws and Polymarket's Terms of Service before automating trading
+or making financial decisions based on this data.
+
+================================
+=== .env.example ===============
+==== Polymarket endpoints (keep defaults unless you know what you're doing) ====
+POLYMARKET_GAMMA_BASE=https://gamma-api.polymarket.com
+POLYMARKET_DATA_BASE=https://data-api.polymarket.com
+
+==== Detector parameters ====
+POLL_INTERVAL_SEC=15
+RECENT_WINDOW_SEC=60
+BASE_WINDOW_SEC=600
+MIN_PRICE_JUMP=0.12
+MIN_RECENT_VOLUME=200
+DOMINANCE_THRESHOLD=0.8
+MAX_EVENT_AGE_HOURS=6
+
+==== Telegram alerts (optional, but recommended) ====
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+TELEGRAM_CHAT_ID=your_telegram_chat_id_here
+
+==== News API (optional) ====
+Example: https://newsapi.org
+NEWS_API_KEY=your_news_api_key_here
+NEWS_LANGUAGE=en
+
+==== Misc ====
+LOG_LEVEL=INFO
+
+================================
+=== polymania/init.py ======
+"""
+PolyMania – local tool for detecting sharp runs on Polymarket events.
+"""
+
+================================
+=== polymania/config.py ========
+import os
+from dataclasses import dataclass
+from typing import Optional
+
+from dotenv import load_dotenv
+
+Load variables from .env file if present
+load_dotenv()
+
+@dataclass
+class Settings:
+# Polymarket endpoints
+gamma_base: str = os.getenv("POLYMARKET_GAMMA_BASE", "https://gamma-api.polymarket.com")
+data_base: str = os.getenv("POLYMARKET_DATA_BASE", "https://data-api.polymarket.com")
+
+python
+Copy code
+# Detection parameters (can be overridden via env)
+poll_interval_sec: int = int(os.getenv("POLL_INTERVAL_SEC", "15"))
+recent_window_sec: int = int(os.getenv("RECENT_WINDOW_SEC", "60"))
+base_window_sec: int = int(os.getenv("BASE_WINDOW_SEC", "600"))
+min_price_jump: float = float(os.getenv("MIN_PRICE_JUMP", "0.12"))
+min_recent_volume: float = float(os.getenv("MIN_RECENT_VOLUME", "200"))
+dominance_threshold: float = float(os.getenv("DOMINANCE_THRESHOLD", "0.8"))
+
+# Optional filters
+max_event_age_hours: int = int(os.getenv("MAX_EVENT_AGE_HOURS", "6"))
+
+# Telegram alert config
+telegram_bot_token: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
+telegram_chat_id: Optional[str] = os.getenv("TELEGRAM_CHAT_ID")
+
+# News API (e.g. newsapi.org)
+news_api_key: Optional[str] = os.getenv("NEWS_API_KEY")
+news_language: str = os.getenv("NEWS_LANGUAGE", "en")
+
+# Misc
+log_level: str = os.getenv("LOG_LEVEL", "INFO")
+settings = Settings()
+
+================================
+=== polymania/polymarket_client.py
+import time
+from typing import Any, Dict, List
+
+import requests
+
+from .config import settings
+
+def fetch_active_events(limit: int = 100) -> List[Dict[str, Any]]:
+"""
+Fetch active (open) events from Polymarket Gamma API.
+
+bash
+Copy code
+Docs: https://docs.polymarket.com/developers/gamma-markets-api/get-events
+"""
+params = {
+    "order": "id",
+    "ascending": "false",
+    "closed": "false",
+    "limit": limit,
+}
+resp = requests.get(f"{settings.gamma_base}/events", params=params, timeout=10)
+resp.raise_for_status()
+events = resp.json()
+# Some gamma endpoints wrap in {"events":[...]} - handle both
+if isinstance(events, dict) and "events" in events:
+    return events["events"]
+return events
+def fetch_trades_for_event(event_id: str, limit: int = 500) -> List[Dict[str, Any]]:
+"""
+Fetch recent trades for a specific event from Polymarket Data API.
+
+pgsql
+Copy code
+Docs: https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets
+Uses /trades with eventId filter.
+"""
+params = {
+    "limit": limit,
+    "eventId": str(event_id),
+    "takerOnly": "true",
+}
+resp = requests.get(f"{settings.data_base}/trades", params=params, timeout=10)
+resp.raise_for_status()
+trades = resp.json()
+if not isinstance(trades, list):
+    return []
+return trades
+def current_timestamp() -> int:
+return int(time.time())
+
+================================
+=== polymania/detector.py ======
+from collections import defaultdict
+from statistics import mean
+from typing import Any, Dict, List, Optional
+
+from .config import settings
+from .polymarket_client import current_timestamp
+
+def normalize_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
+"""
+Normalize trade dict from Data API to a compact structure.
+
+css
+Copy code
+Example from docs:
+{
+    "proxyWallet": "...",
+    "side": "BUY",
+    "size": 123,
+    "price": 0.57,
+    "timestamp": 1730731984,
+    "title": "...",
+    "slug": "...",
+    "eventSlug": "...",
+    "outcome": "Yes",
+    ...
+}
+"""
+return {
+    "timestamp": int(trade["timestamp"]),
+    "price": float(trade["price"]),
+    "size": float(trade["size"]),
+    "side": str(trade.get("side", "")),
+    "outcome": str(trade.get("outcome", "")),
+}
+def detect_run_for_event(event: Dict[str, Any], trades: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+"""
+Core detection logic.
+
+css
+Copy code
+Returns a signal dict if a strong directional run is detected,
+otherwise returns None.
+"""
+if not trades:
+    return None
+
+now = current_timestamp()
+
+recent_trades = [t for t in trades if now - t["timestamp"] <= settings.recent_window_sec]
+base_trades = [t for t in trades if now - t["timestamp"] <= settings.base_window_sec]
+
+# Need at least a few trades in the recent window
+if len(recent_trades) < 5:
+    return None
+
+# Last trade price
+last_trade = sorted(trades, key=lambda t: t["timestamp"])[-1]
+last_price = last_trade["price"]
+
+# Base price – average over longer window
+base_price = mean(t["price"] for t in base_trades) if base_trades else last_price
+price_jump = last_price - base_price
+
+# Volume in recent window
+recent_volume = sum(t["size"] for t in recent_trades)
+if recent_volume < settings.min_recent_volume:
+    return None
+
+# Dominance by outcome + side
+volume_by_key = defaultdict(float)
+for t in recent_trades:
+    key = f"{t['outcome']}_{t['side']}"
+    volume_by_key[key] += t["size"]
+
+if not volume_by_key:
+    return None
+
+dominant_key, dominant_vol = max(volume_by_key.items(), key=lambda kv: kv[1])
+total_vol = sum(volume_by_key.values())
+dominance = dominant_vol / total_vol if total_vol > 0 else 0.0
+
+if price_jump >= settings.min_price_jump and dominance >= settings.dominance_threshold:
+    outcome, side = dominant_key.split("_", 1)
+    return {
+        "event_id": event.get("id"),
+        "event_title": event.get("title"),
+        "event_slug": event.get("slug") or event.get("eventSlug"),
+        "last_price": last_price,
+        "base_price": base_price,
+        "price_jump": price_jump,
+        "recent_volume": recent_volume,
+        "dominant_outcome": outcome,
+        "dominant_side": side,
+        "dominance": dominance,
+    }
+
+return None
+================================
+=== polymania/news_client.py ===
+from typing import Any, Dict, List
+
+import requests
+
+from .config import settings
+
+def search_news(query: str, max_results: int = 3) -> List[Dict[str, Any]]:
+"""
+Query recent news for the event using a 3rd-party news API.
+
+css
+Copy code
+This implementation uses newsapi.org as an example.
+You must provide NEWS_API_KEY in your .env file.
+
+If no API key is configured, returns an empty list.
+"""
+if not settings.news_api_key:
+    return []
+
+url = "https://newsapi.org/v2/everything"
+params = {
+    "q": query,
+    "language": settings.news_language,
+    "pageSize": max_results,
+    "sortBy": "publishedAt",
+    "apiKey": settings.news_api_key,
+}
+
+try:
+    resp = requests.get(url, params=params, timeout=10)
+    resp.raise_for_status()
+except Exception:
+    return []
+
+data = resp.json()
+articles = data.get("articles", [])
+results: List[Dict[str, Any]] = []
+
+for a in articles[:max_results]:
+    results.append(
+        {
+            "title": a.get("title"),
+            "source": a.get("source", {}).get("name"),
+            "url": a.get("url"),
+            "publishedAt": a.get("publishedAt"),
+        }
+    )
+
+return results
+================================
+=== polymania/notifier.py ======
+from typing import Any, Dict, List, Optional
+
+import requests
+
+from .config import settings
+
+def _format_signal_message(signal: Dict[str, Any], news: Optional[List[Dict[str, Any]]] = None) -> str:
+"""
+Build a human-readable alert message for Telegram / console.
+"""
+lines = []
+lines.append("🚨 PolyMania – Run detected on Polymarket 🚨")
+lines.append("")
+lines.append(f"Event: {signal.get('event_title')} ({signal.get('event_id')})")
+if signal.get("event_slug"):
+lines.append(f"Market: https://polymarket.com/event/{signal['event_slug']}")
+lines.append("")
+lines.append(f"Outcome: {signal['dominant_outcome']} ({signal['dominant_side']})")
+lines.append(f"Last price: {signal['last_price']:.3f}")
+lines.append(f"Base price: {signal['base_price']:.3f}")
+lines.append(f"Price jump: {signal['price_jump']*100:.1f}%")
+lines.append(f"1m volume: {signal['recent_volume']:.2f}")
+lines.append(f"Dominance: {signal['dominance']*100:.1f}% of volume")
+
+css
+Copy code
+if news:
+    lines.append("")
+    lines.append("*Latest news:*")
+    for i, item in enumerate(news, start=1):
+        title = item.get("title") or "Untitled"
+        src = item.get("source") or "Unknown source"
+        url = item.get("url") or ""
+        lines.append(f"{i}. {title} — _{src}_")
+        if url:
+            lines.append(url)
+
+return "\n".join(lines)
+def send_telegram_message(text: str) -> bool:
+"""
+Send a Markdown-formatted message to a Telegram chat.
+
+php
+Copy code
+Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in env.
+"""
+if not settings.telegram_bot_token or not settings.telegram_chat_id:
+    # No config – treat as no-op
+    print("[PolyMania] Telegram not configured, printing message instead:\n")
+    print(text)
+    print("\n" + "=" * 80 + "\n")
+    return False
+
+url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+payload = {
+    "chat_id": settings.telegram_chat_id,
+    "text": text,
+    "parse_mode": "Markdown",
+    "disable_web_page_preview": False,
+}
+
+try:
+    resp = requests.post(url, json=payload, timeout=10)
+    resp.raise_for_status()
+    return True
+except Exception as e:
+    print("[PolyMania] Failed to send Telegram message:", e)
+    print("Message was:\n", text)
+    return False
+def notify_run(signal: Dict[str, Any], news: Optional[List[Dict[str, Any]]] = None) -> None:
+"""
+High-level notification helper.
+"""
+msg = _format_signal_message(signal, news)
+send_telegram_message(msg)
+
+================================
+=== polymania/main.py ==========
+import time
+from typing import Dict, Any, List
+
+from .config import settings
+from .detector import detect_run_for_event, normalize_trade
+from .news_client import search_news
+from .notifier import notify_run
+from .polymarket_client import fetch_active_events, fetch_trades_for_event, current_timestamp
+
+def _is_event_recent(event: Dict[str, Any]) -> bool:
+"""
+Filter events to only those created in the last N hours.
+
+pgsql
+Copy code
+Gamma events usually include a created_at timestamp in seconds.
+If it's missing, we don't filter by age.
+"""
+max_age_sec = settings.max_event_age_hours * 3600
+created_at = event.get("created_at") or event.get("createdAt")
+if not created_at:
+    return True
+
+try:
+    created_ts = int(created_at)
+except (TypeError, ValueError):
+    return True
+
+now = current_timestamp()
+return (now - created_ts) <= max_age_sec
+def main_loop() -> None:
+print("[PolyMania] Starting run detector...")
+print(f"[PolyMania] Poll interval: {settings.poll_interval_sec}s | recent window: {settings.recent_window_sec}s")
+
+css
+Copy code
+while True:
+    try:
+        events = fetch_active_events(limit=100)
+        now = current_timestamp()
+
+        for event in events:
+            if not _is_event_recent(event):
+                continue
+
+            event_id = event.get("id")
+            if not event_id:
+                continue
+
+            trades_raw = fetch_trades_for_event(str(event_id), limit=500)
+            trades_norm = [normalize_trade(t) for t in trades_raw]
+
+            signal = detect_run_for_event(event, trades_norm)
+            if signal:
+                # Build query for external news using event title / slug
+                query_parts: List[str] = []
+                title = signal.get("event_title")
+                slug = signal.get("event_slug")
+                if title:
+                    query_parts.append(str(title))
+                if slug and slug not in (title or ""):
+                    query_parts.append(str(slug))
+
+                news_query = " ".join(query_parts) if query_parts else "Polymarket"
+                news = search_news(news_query, max_results=3)
+
+                notify_run(signal, news)
+
+    except Exception as e:
+        print("[PolyMania] Error in main loop:", e)
+
+    time.sleep(settings.poll_interval_sec)
+if name == "main":
+main_loop
